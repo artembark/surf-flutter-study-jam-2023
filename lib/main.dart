@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:surf_flutter_study_jam_2023/features/ticket_storage/ticket_storage_page.dart';
+import 'package:surf_flutter_study_jam_2023/app/shared_preferences.dart';
+import 'package:surf_flutter_study_jam_2023/features/ticket_storage/presentation/screens/ticket_storage_page.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await SharedPrefs.init();
+
   runApp(const MyApp());
 }
 
@@ -11,9 +16,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Хранение билетов',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        useMaterial3: true,
       ),
       home: const TicketStoragePage(),
     );

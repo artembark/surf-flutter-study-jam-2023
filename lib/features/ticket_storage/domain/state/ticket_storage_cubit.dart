@@ -45,7 +45,4 @@ class TicketStorageCubit extends Cubit<TicketStorageState> {
     loadTickets();
   }
 
-  void downloadAll(){
-
-  }
 }

@@ -25,8 +25,8 @@ class _TicketStoragePageState extends State<TicketStoragePage> {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) =>
-      TicketStorageCubit(TicketStorageRepositoryImpl(SharedPrefs.instance))
-        ..loadTickets(),
+          TicketStorageCubit(TicketStorageRepositoryImpl(SharedPrefs.instance))
+            ..loadTickets(),
       child: const TicketStoragePageView(),
     );
   }
@@ -63,7 +63,7 @@ class _TicketStoragePageViewState extends State<TicketStoragePageView> {
               itemCount: state.tickets.length,
               shrinkWrap: true,
               separatorBuilder: (BuildContext context, int index) =>
-              const SizedBox(
+                  const SizedBox(
                 height: 16,
               ),
               itemBuilder: (BuildContext context, int index) {
@@ -84,20 +84,19 @@ class _TicketStoragePageViewState extends State<TicketStoragePageView> {
                         const SnackBar(content: Text('Билет удален')));
                   },
                   child: BlocProvider(
-                    create: (context) =>
-                    TicketDownloadCubit(
+                    create: (context) => TicketDownloadCubit(
                         currentTicket,
                         TicketDownloadServiceImpl(),
                         TicketStorageRepositoryImpl(SharedPrefs.instance))
                       ..init(),
                     child:
-                    BlocBuilder<TicketDownloadCubit, TicketDownloadState>(
+                        BlocBuilder<TicketDownloadCubit, TicketDownloadState>(
                       builder: (context, state) {
                         final int loadedSize =
                             state.ticketEntity?.loadedSize ?? 0;
                         final int? maxSize = state.ticketEntity?.maxSize;
                         final double currentProgress =
-                        maxSize != null ? loadedSize / maxSize : 0;
+                            maxSize != null ? loadedSize / maxSize : 0;
                         return Row(
                           children: [
                             Icon(
@@ -118,11 +117,10 @@ class _TicketStoragePageViewState extends State<TicketStoragePageView> {
                                   if (filePath != null && filePath.isNotEmpty) {
                                     Navigator.of(context)
                                         .push(MaterialPageRoute(
-                                        builder: (context) =>
-                                            PdfViewScreen(
-                                              filePath: filePath,
-                                              fileName: fileName,
-                                            )));
+                                            builder: (context) => PdfViewScreen(
+                                                  filePath: filePath,
+                                                  fileName: fileName,
+                                                )));
                                   }
                                 },
                                 child: Column(
@@ -132,8 +130,7 @@ class _TicketStoragePageViewState extends State<TicketStoragePageView> {
                                       state.ticketEntity?.fileName ?? '',
                                       style: TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          color: Theme
-                                              .of(context)
+                                          color: Theme.of(context)
                                               .colorScheme
                                               .primary),
                                     ),
@@ -142,7 +139,7 @@ class _TicketStoragePageViewState extends State<TicketStoragePageView> {
                                     ),
                                     LinearProgressIndicator(
                                       value: state.ticketEntity?.status ==
-                                          TicketDownloadStatus.downloaded
+                                              TicketDownloadStatus.downloaded
                                           ? 1
                                           : currentProgress,
                                     ),
@@ -150,9 +147,7 @@ class _TicketStoragePageViewState extends State<TicketStoragePageView> {
                                       height: 4,
                                     ),
                                     Text(
-                                        '${state.ticketEntity?.status
-                                            .name}${_processLabel(
-                                            loadedSize, maxSize)}')
+                                        '${state.ticketEntity?.status.name}${_processLabel(loadedSize, maxSize)}')
                                   ],
                                 ),
                               ),
@@ -166,17 +161,13 @@ class _TicketStoragePageViewState extends State<TicketStoragePageView> {
                             Padding(
                               padding: const EdgeInsets.only(left: 16.0),
                               child: GestureDetector(
-                                onTap: () =>
-                                    context
-                                        .read<TicketDownloadCubit>()
-                                        .downloadTicket(),
+                                onTap: () => context
+                                    .read<TicketDownloadCubit>()
+                                    .downloadTicket(),
                                 child: Icon(
                                   _ticketDownloadStatusToIconData(
                                       state.ticketEntity?.status),
-                                  color: Theme
-                                      .of(context)
-                                      .colorScheme
-                                      .primary,
+                                  color: Theme.of(context).colorScheme.primary,
                                 ),
                               ),
                             )
@@ -192,24 +183,24 @@ class _TicketStoragePageViewState extends State<TicketStoragePageView> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () =>
-            _showTicketAddModal(
-              context: context,
-              onAdd: (url) =>
-                  context.read<TicketStorageCubit>().addTicket(url: url),
-            ),
+        onPressed: () => _showTicketAddModal(
+          context: context,
+          onAdd: (url, type) => context
+              .read<TicketStorageCubit>()
+              .addTicket(url: url, type: type),
+        ),
         label: const Text('Добавить'),
       ),
     );
   }
 
   _showTicketAddModal(
-      {required BuildContext context, required Function(String text) onAdd}) {
+      {required BuildContext context,
+      required Function(String text, TicketType type) onAdd}) {
     showModalBottomSheet(
         context: context,
         isScrollControlled: true,
-        builder: (context) =>
-            _AddUrlBottomSheet(
+        builder: (context) => _AddUrlBottomSheet(
               onAdd: onAdd,
             ));
   }
@@ -270,7 +261,7 @@ class _TicketStoragePageViewState extends State<TicketStoragePageView> {
 /// Содержимое модального окна добавления url
 class _AddUrlBottomSheet extends StatefulWidget {
   const _AddUrlBottomSheet({Key? key, required this.onAdd}) : super(key: key);
-  final Function(String text) onAdd;
+  final Function(String text, TicketType type) onAdd;
 
   @override
   State<_AddUrlBottomSheet> createState() => _AddUrlBottomSheetState();
@@ -280,13 +271,15 @@ class _AddUrlBottomSheetState extends State<_AddUrlBottomSheet> {
   TextEditingController urlController = TextEditingController();
   String? urlErrorText;
 
+  TicketType? selectedType;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       /// если буфер содержит что-то с pdf - вставляем
       final ClipboardData? clipboardData =
-      await Clipboard.getData('text/plain');
+          await Clipboard.getData('text/plain');
       final String? clipboardText = clipboardData?.text;
       if (clipboardText != null && clipboardText.contains('.pdf') == true) {
         urlController.text = clipboardText;
@@ -298,10 +291,7 @@ class _AddUrlBottomSheetState extends State<_AddUrlBottomSheet> {
   Widget build(BuildContext context) {
     return Padding(
       padding:
-      EdgeInsets.only(bottom: MediaQuery
-          .of(context)
-          .viewInsets
-          .bottom),
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -336,11 +326,18 @@ class _AddUrlBottomSheetState extends State<_AddUrlBottomSheet> {
             ),
             Wrap(
               alignment: WrapAlignment.center,
-              children: TicketType.values.map((type) =>
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Chip(label: Text(type.name)),
-                  )).toList(),
+              children: TicketType.values
+                  .map((type) => Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: InputChip(
+                          selected: type == selectedType,
+                          label: Text(type.name),
+                          onPressed: () => setState(() {
+                            selectedType = type;
+                          }),
+                        ),
+                      ))
+                  .toList(),
             ),
             const SizedBox(
               height: 16,
@@ -354,7 +351,8 @@ class _AddUrlBottomSheetState extends State<_AddUrlBottomSheet> {
                   } else if (!urlString.contains('pdf')) {
                     errorText = 'Введите корректный URL';
                   } else {
-                    widget.onAdd(urlString);
+                    widget.onAdd(
+                        urlString, selectedType ?? TicketType.undefined);
                     Navigator.of(context).pop();
                   }
                   setState(() {
